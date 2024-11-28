@@ -1,0 +1,14 @@
+
+
+```{r}
+library(readxl)
+
+data_source <- './Data_With_Geolocations_stud.xlsx'
+sheet_name <- 'Geolocation expanded'
+
+data <- read_excel(data_source, sheet = sheet_name)
+stolen_frequency <- data$'How many times has your bike been stolen since you started cycling?'
+
+"Stolen freqency"
+stolen_frequency[1:4]
+```
