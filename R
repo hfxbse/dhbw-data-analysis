@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+PROJECT_DIR=$(dirname "$0")
+nix run "$PROJECT_DIR"\#R -- "$@"
