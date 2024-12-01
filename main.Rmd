@@ -2,13 +2,32 @@
 
 ```{r}
 library(readxl)
+library(dplyr)
 
 data_source <- './Data_With_Geolocations_stud.xlsx'
 sheet_name <- 'Geolocation expanded'
 
-data <- read_excel(data_source, sheet = sheet_name)
-stolen_frequency <- data$'How many times has your bike been stolen since you started cycling?'
+data <- rename(read_excel(data_source, sheet = sheet_name),
+  bike_stolen_frequency='How many times has your bike been stolen since you started cycling?',
+  place_of_last_bike_theft='Where was the last bike stolen from?',
+  bike_securing_method='What was the bike secured with?',
+  bike_lock_rating='What security rating did the primary lock have?',
+  other_lock_rating='Please specify the other security rating...',
+  bike_lock_cost='How much did you spend on your locks?',
+  bike_cost='What was the approximate value of the bike?',
+  frame_number_record='Did you have a record of the frame number of the bike?',
+  police_report='Did you report the stolen bike to the police?',
+  bike_retrived='Did you get the stolen bike back?',
+  components_stolen_frequency='How many times have components (wheels, seats, brakes etc) been stolen from your bike?',
+  components_stolen='Which components have been stolen?',
+  other_components_stolen='Please specify the other components...',
+  component_securing_method='What was the last stolen component attached / secured with?',
+  location_description='Geolocation Details',
+  location_latitude='Latitude',
+  location_longitude='Longitude',
+  location_state='Country',
+  location_city='City'
+)
 
-"Stolen freqency"
-stolen_frequency[1:4]
+str(data)
 ```

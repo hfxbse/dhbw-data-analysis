@@ -15,6 +15,7 @@
   {
     packages.R = pkgs.rWrapper.override {
       packages = with pkgs.rPackages; [
+        dplyr
         knitr
         readxl
         rmarkdown
