@@ -11,9 +11,7 @@
   outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
-  in
-  {
-    packages.R = pkgs.rWrapper.override {
+    R = pkgs.rWrapper.override {
       packages = with pkgs.rPackages; [
         dplyr
         knitr
@@ -24,7 +22,23 @@
         stringr
       ];
     };
+  in
+  {
+    devShells.rMarkdown = pkgs.mkShell {
+      packages = [
+        pkgs.pandoc     # Dependency to render RMarkdown
+        R
+      ];
+    };
 
-    packages.default = self.packages.${system}.R;
+    # Allow traditional interactive package installation
+    # Useful for JetBrains IDEs which do not pickup libraries installed through Nix
+    devShells.rInteractive = self.devShells.${system}.rMarkdown.overrideAttrs (previous: {
+      packages = [
+        pkgs.gnumake
+      ] ++ (previous.packages or []);
+    });
+
+    devShells.default = self.devShells.${system}.rMarkdown;
   });
 }
