@@ -1,6 +1,129 @@
-First, read the data from the Exel file and rename the columns to something more practical.
+---
+title: Explorative Datenanalyse von Fahrraddiebstähle
+---
+
+# 1. Beschreibung der Daten
+
+## 1.1. Herkunft der Daten
+
+Die zugrunde liegenden Daten wurden in einer [Online-Umfrage](https://thebestbikelock.com/win-free-bike-competition/)
+im November 2021 erhoben.
+Das Ziel dieser Umfrage ist es, das Ausmaß von Fahrraddiebstahl in Nordamerika, Europa und dem Vereinigten Königreich
+einschätzen zu können.
+
+Die Umfrage umfasst 12 Fragen, welche hier unverändert in der aufgelistet sind.
+Bei der Auswahl der Antwort-Möglichkeiten "Other" beziehungsweise "Others" wird zusätzlich gewünscht, diese Antwort als
+Freitext zu spezifizieren.
+Eine Verifizierung der Eingabe bietet das Formular nicht.
+So ist es beispielsweise möglich anzugeben, das Fahrrad wäre gleichzeitig abgesichert und nicht abgesichert gewesen.
+
+[](@formatter:off)
+
+------------------------------------------------------------------------------------------------------------------------
+Frage                                               Antwort-Möglichkeiten                  Mehrfachauswahl Verpflichtend
+--------------------------------------------------- -------------------------------------- --------------- -------------
+How many times has your bike been stolen since you  Never<br>                              Nein            Ja
+started cycling?                                    1<br>
+                                                    2<br>
+                                                    3<br>
+                                                    4<br>
+                                                    5<br>
+                                                    6 times or more
+
+Where was the last bike stolen from?                Street<br>                             Nein            Nein
+                                                    Front garden / yard<br>
+                                                    Back garden / yard<br>
+                                                    Shed<br>
+                                                    Garage<br>
+                                                    Inside home<br>
+                                                    Work or Public Authority
+                                                    bike<br>
+                                                    parking
+
+What was the bike secured with?                     It wasn’t locked<br>                   Ja              Nein
+                                                    Cable lock<br>
+                                                    U-lock / D-lock<br>
+                                                    Chain lock<br>
+                                                    Folding lock
+
+What security rating did the primary lock have?     Don't know<br>                         Nein            Nein
+                                                    None<br>
+                                                    Sold Secure Bronze<br>
+                                                    Sold Secure Silver<br>
+                                                    Sold Secure Gold<br>
+                                                    Sold Secure Diamond<br>
+                                                    Other
+
+How much did you spend on your locks?               Less than 20<br>                       Nein            Nein
+                                                    20 - 40<br>
+                                                    41 - 60<br>
+                                                    61 - 100<br>
+                                                    More than 100
+
+What was the approximate value of the bike?         Less than 100<br>                      Nein            Nein
+                                                    100 - 400<br>
+                                                    401 - 700<br>
+                                                    701 - 1000<br>
+                                                    Over 1000
+
+Did you have a record of the frame number of the    Yes<br>                                Nein            Nein
+bike?                                               No
+
+Did you report the stolen bike to the police?       Yes<br>                                Nein            Nein
+                                                    No
+
+Did you get the stolen bike back?                   Yes<br>                                Nein            Nein
+                                                    No
+
+How many times have components (wheels, seats,      Never<br>                              Nein            Ja
+brakes etc) been stolen from your bike?             1<br>
+                                                    2<br>
+                                                    3<br>
+                                                    4<br>
+                                                    5<br>
+                                                    6 times or more<br>
+
+Which components have been stolen?                  Wheels<br>                             Ja              Nein
+                                                    Seats<br>
+                                                    Handlebars<br>
+                                                    Headset<br>
+                                                    Forks<br>
+                                                    Brakes<br>
+                                                    Gears<br>
+                                                    Lights<br>
+                                                    Others
+
+What was the last stolen component attached /       Quick release clamp only<br>           Nein            Nein
+secured with?                                       Quick release clamp plus
+                                                    cable<br>
+                                                    Hex bolt or Standard nut only<br>
+                                                    Hex bolt or Standard nut plus
+                                                    cable<br>
+                                                    Security skewers / nuts (Pinhead,
+                                                    Pitlock, Hexlox etc)<br>
+                                                    Any other type of secondary bike
+                                                    lock
+------------------------------------------------------------------------------------------------------------------------
+
+[](@formatter:on)
+
+Als Belohnung wurde den ersten 5000 Teilnehmern eine Gewinnchance auf ein Fahrrad im Wert von bis zu 600 $ in
+Aussicht gestellt.
+Eine Mehrfachteilnahme wird nicht verhindert, weshalb es nahe liegt, dass einzelne Teilnehmer mehrfach die Umfrage
+beantworten, um ihre Gewinnchancen zu steigern.
+
+Neben den Antworten auf die Fragen enthält der Datensatz den Standort der Teilnehmer.
+Da diese nicht explizit vom Teilnehmer angegeben wird, handelt es sich wahrscheinlich um eine grobe Bestimmung anhand
+der IP-Adresse statt einer exakten Methode.
+
+## 1.2. Einlesen der Daten
+
+Die Daten liegen in einer Excel-Datei vor, welche als Spaltennamen die jeweiligen Fragen verwendet.
+Für eine bessere Handhabung werden die Spaltennamen durch Umbenennen vereinfacht.
 
 ```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
 library(readxl)
 library(dplyr)
 
@@ -32,7 +155,11 @@ data <- read_excel(data_source, sheet = sheet_name) %>%
 
 str(data)
 ```
-Then, create separate columns for multiple choice questions.
+
+## 1.3. Aufbereitung
+
+Alle gewählten Antworten bei Fragen mit Mehrfachauswahl befinden sich in der gleichen Spalte.
+Um die Qualität der Daten zu verbessern, wird für jede Option einer Mehrfachauswahl eine weitere Spalte abgeleitet.
 
 ```{r}
 library(stringr)
