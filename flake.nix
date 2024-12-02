@@ -17,9 +17,11 @@
       packages = with pkgs.rPackages; [
         dplyr
         knitr
+        purrr
         readxl
         rmarkdown
         rstudioapi
+        stringr
       ];
     };
 
