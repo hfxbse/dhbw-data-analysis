@@ -1,0 +1,55 @@
+name: deploy-notebook
+run-name: Deploy R notebook to GitHub pages
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  render-markdown:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: "Install Nix"
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+        name: "Setup Nix cache"
+
+      - uses: actions/checkout@v4
+        name: 'Checkout Repository'
+
+      - run: echo "rmarkdown::render('main.Rmd')" | nix develop --command R --slave
+        name: 'Render markdown'
+
+      - run: mkdir _site/
+        name: 'Create output directory'
+
+      - run: mv main.html _site/index.html
+        name: 'Move output to output directory'
+
+      - uses: actions/upload-pages-artifact@v3
+        name: 'Upload rendered Notebook as pages artifact'
+        id: deployment
+        with:
+          name: 'notebook'
+          path: '_site/'
+
+  deploy:
+    needs: render-markdown
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Deploy notebook to GitHub Pages'
+        uses: actions/deploy-pages@v4
+        id: deployment
+        with:
+          artifact_name: 'notebook'
