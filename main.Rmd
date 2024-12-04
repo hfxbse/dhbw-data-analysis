@@ -149,7 +149,7 @@ data <- read_excel(data_source, sheet = sheet_name) %>%
     location_description = 'Geolocation Details',
     location_latitude = 'Latitude',
     location_longitude = 'Longitude',
-    location_state = 'Country',
+    location_country = 'Country',
     location_city = 'City'
   )
 
@@ -196,4 +196,71 @@ data <- data %>%
   )
 
 str(data)
+```
+
+## 1.4. Quantitative Betrachtung der Teilnehmer
+
+Da die Umfragedaten keine Rückschlüsse auf die Teilnehmer zulassen, lassen sich lediglich die Teilnahmen betrachten.
+Eine mehrfache Teilnahme lässt sich nicht eindeutig identifizieren.
+
+> Wie viele Antworten auf die Umfrage wurden abgegeben?
+
+```{r}
+data_count <- nrow(data)
+data_count
+```
+
+> Wie viele unterschiedliche Antworten auf die Umfragen wurden abgegeben?
+
+```{r}
+unique_count <- nrow(unique(data))
+
+unique_count
+unique_count / data_count
+```
+
+Die Doppelnennungen können auch zufällig entstehen, da ein Teilnehmer die gleiche Erfahrung gemacht haben kann wie ein
+anderer.
+Der Anteil dieser Antworten liegt bei unter 2 %, weshalb hier keine genauere Betrachtung benötigt wird und im
+restlichen Notebook der volle Datensatz verwendet wird.
+
+> Aus welchen Regionen kommen die Teilnahmen?
+
+```{r}
+submissions_per_region <- data %>%
+  group_by(location_country, location_city) %>%
+  summarize(region_count = n())
+
+top_countries <- submissions_per_region %>%
+  filter(!is.na(location_country)) %>%
+  group_by(location_country) %>%
+  summarize(country_count = sum(region_count)) %>%
+  arrange(desc(country_count)) %>%
+  top_n(5) %>%
+  select(location_country)
+
+country_city_distrubition <- function(region_counts, country) {
+  country_regions <- region_counts %>%
+    filter(location_country == country, !is.na(location_city))
+
+  top_region_counts <- country_regions %>%
+    arrange(desc(region_count)) %>%
+    top_n(5)
+
+  other_region_combined_count <- country_regions %>%
+    filter(!(location_city %in% top_region_counts$location_city)) %>%
+    summarize(region_count = sum(region_count), location_city = "Other")
+
+  bind_rows(top_region_counts, other_region_combined_count)
+}
+
+top_regions_per_top_country <- bind_rows(
+  top_countries$location_country %>% map(\(x) country_city_distrubition(submissions_per_region, x)),
+  data %>%
+    filter(!(location_country %in% top_countries$location_country)) %>%
+    summarize(region_count = n(), location_city = "Other", location_country = "Other")
+)
+
+top_regions_per_top_country
+
 ```
