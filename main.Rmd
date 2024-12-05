@@ -212,7 +212,7 @@ data_count
 > Wie viele unterschiedliche Antworten auf die Umfragen wurden abgegeben?
 
 ```{r}
-unique_count <- nrow(unique(data))
+unique_count <- data %>% unique() %>% nrow()
 
 unique_count
 unique_count / data_count
@@ -222,6 +222,19 @@ Die Doppelnennungen können auch zufällig entstehen, da ein Teilnehmer die glei
 anderer.
 Der Anteil dieser Antworten liegt bei unter 2 %, weshalb hier keine genauere Betrachtung benötigt wird und im
 restlichen Notebook der volle Datensatz verwendet wird.
+
+> Aus wie vielen Länder kommen die Teilnahmen?
+
+```{r}
+data %>%
+  select(location_country) %>%
+  unique() %>%
+  filter(!is.na(location_country)) %>%
+  nrow()
+```
+
+Das Ergebnis ist als Mindestanzahl zu verstehen, da Teilnahmen nicht immer einem Land zugeordnet werden können und
+gegebenenfalls aus weiteren Länder getätigt worden sind.
 
 > Aus welchen Regionen kommen die Teilnahmen?
 
