@@ -2,7 +2,7 @@
   description = "R interpreter for this R notebook";
 
   inputs = {
-    # Use R < 4.4
+    # Use R < v4.4
     # See https://youtrack.jetbrains.com/issue/R-1543/R-Console-function-calls-fail-complain-about-excessive-arguments
     nixpkgs.url = "github:nixos/nixpkgs?ref=9ca3f649614213b2aaf5f1e16ec06952fe4c2632";
     flake-utils.url = "github:numtide/flake-utils";
@@ -14,12 +14,15 @@
     R = pkgs.rWrapper.override {
       packages = with pkgs.rPackages; [
         dplyr
+        ggplot2
         knitr
+        maps
         purrr
         readxl
         rmarkdown
         rstudioapi
         stringr
+        treemapify
       ];
     };
   in
