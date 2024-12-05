@@ -2,9 +2,8 @@
 title: Explorative Datenanalyse von Fahrraddiebstähle
 ---
 
-# 1. Beschreibung der Daten
 
-## 1.1. Herkunft der Daten
+# 1. Herkunft der Daten
 
 Die zugrunde liegenden Daten wurden in einer [Online-Umfrage](https://thebestbikelock.com/win-free-bike-competition/)
 im November 2021 erhoben.
@@ -116,7 +115,7 @@ Neben den Antworten auf die Fragen enthält der Datensatz den Standort der Teiln
 Da diese nicht explizit vom Teilnehmer angegeben wird, handelt es sich wahrscheinlich um eine grobe Bestimmung anhand
 der IP-Adresse statt einer exakten Methode.
 
-## 1.2. Einlesen der Daten
+# 2. Einlesen der Daten
 
 Die Daten liegen in einer Excel-Datei vor, welche als Spaltennamen die jeweiligen Fragen verwendet.
 Für eine bessere Handhabung werden die Spaltennamen durch Umbenennen vereinfacht.
@@ -156,7 +155,7 @@ data <- read_excel(data_source, sheet = sheet_name) %>%
 str(data)
 ```
 
-## 1.3. Aufbereitung
+# 3. Aufbereitung
 
 Alle gewählten Antworten bei Fragen mit Mehrfachauswahl befinden sich in der gleichen Spalte.
 Um die Qualität der Daten zu verbessern, wird für jede Option einer Mehrfachauswahl eine weitere Spalte abgeleitet.
@@ -171,8 +170,8 @@ check_multi_selection <- function(method, column) {
     NA,
     if_else(
       map_lgl(str_split(column, '\r\n'), ~method %in% .x),
-      "Yes",
-      "No"
+      'Yes',
+      'No'
     )
   )
 }
@@ -198,7 +197,7 @@ data <- data %>%
 str(data)
 ```
 
-## 1.4. Quantitative Betrachtung der Teilnehmer
+# 4. Quantitative Betrachtung der Teilnahmen
 
 Da die Umfragedaten keine Rückschlüsse auf die Teilnehmer zulassen, lassen sich lediglich die Teilnahmen betrachten.
 Eine mehrfache Teilnahme lässt sich nicht eindeutig identifizieren.
@@ -252,7 +251,7 @@ country_city_distrubition <- function(region_counts, country) {
 
   other_region_combined_count <- country_regions %>%
     filter(!(location_city %in% top_region_counts$location_city)) %>%
-    summarize(region_count = sum(region_count), location_city = "Other")
+    summarize(region_count = sum(region_count), location_city = 'Other')
 
   bind_rows(top_region_counts, other_region_combined_count)
 }
@@ -261,7 +260,7 @@ top_regions_per_top_country <- bind_rows(
   top_countries$location_country %>% map(\(x) country_city_distrubition(submissions_per_region, x)),
   data %>%
     filter(!(location_country %in% top_countries$location_country)) %>%
-    summarize(region_count = n(), location_city = "Other", location_country = "Other")
+    summarize(region_count = n(), location_city = 'Other', location_country = 'Other')
 )
 
 ggplot(
@@ -269,36 +268,82 @@ ggplot(
   aes(area = region_count, fill = location_country, subgroup = location_country, label = location_city)
 ) +
   geom_treemap() +
-  geom_treemap_text(colour = "white", place = "centre", grow = FALSE) +
+  geom_treemap_text(colour = 'white', place = 'centre', grow = FALSE) +
   labs(
-    title = "Regionen mit den meisten Teilnahmen",
-    caption = "Die Flächen der Teile entspricht der Anzahl der Teilnahmen.",
-    fill = "Land"
+    title = 'Regionen mit den meisten Teilnahmen',
+    caption = 'Die Flächen der Teile entspricht der Anzahl der Teilnahmen.',
+    fill = 'Land'
   )
 ```
 
 ```{r, fig.width=10,fig.height=6.25}
 library(maps)
 
-world_map <- map_data("world")
+world_map <- map_data('world')
 
 ggplot() +
   geom_polygon(data = world_map, aes(x = long, y = lat, group = group)) +
   theme(
     panel.background = element_rect(fill = 'white', color = 'black'),
-    axis.line = element_line(colour = "black"),
+    axis.line = element_line(color = 'black'),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
   ) +
   geom_point(
     data = data,
     aes(x = as.numeric(location_longitude), y = as.numeric(location_latitude)),
-    color = "Deep Pink",
-    fill = "Pink",
+    color = 'Deep Pink',
+    fill = 'Pink',
     pch = 21,
     size = 2,
     alpha = I(0.5)
   ) +
   labs(
-    title = "Orte der Teilnahmen",
-    caption = "Ein Marker entspricht eine Teilnahme.",
+    title = 'Orte der Teilnahmen',
+    caption = 'Ein Marker entspricht eine Teilnahme.',
+  )
+```
+
+# 5. Unstimmigkeiten in den Daten
+
+Da wie genannt das Formular der Umfrage keine hinreichende Validierung durchführt, treten Widersprüche in den Daten
+auf.
+Um widerspruchslose Aussagen zu treffen könne, werden die problematischen Daten bei der Auswertung ausgeschlossen.
+
+> Wie viele Fahrräder sind zu ihrem Besitzer zurückgekommen, und wie viele wurden davor nie gestohlen?
+
+```{r, fig.width=10}
+retrieved_bikes <- data %>%
+  filter(bike_retrived == 'Yes') %>%
+  mutate(bike_stolen_frequency = if_else(bike_stolen_frequency == 'Never', 'No', 'Yes')) %>%
+  group_by(bike_stolen_frequency) %>%
+  summarize(submission_count = n())
+
+donut_diameter <- 2.5
+
+ggplot(retrieved_bikes, aes(x = donut_diameter, y = submission_count, fill = bike_stolen_frequency)) +
+  geom_col() +
+  geom_text(aes(label = submission_count), position = position_stack(vjust = 0.5), color = 'white') +
+  coord_polar(theta = "y") +
+  xlim(c(0.2, donut_diameter + 0.5)) +
+  theme(
+    panel.background = element_rect(fill = 'white', color = 'white'),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  ) +
+  annotate(
+    'text',
+    label = retrieved_bikes %>% summarize(submission_count = sum(submission_count)),
+    fontface = 'bold',
+    color = 'black',
+    size = 16,
+    x = 0.3,
+    y = 0
+  ) +
+  labs(
+    title = 'Anzahl der zurückerhaltenen Fahrräder',
+    fill = 'Fahrrad gestohlen'
   )
 ```
