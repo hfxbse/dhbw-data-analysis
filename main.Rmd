@@ -353,23 +353,53 @@ Da wie genannt das Formular der Umfrage keine hinreichende Validierung durchfüh
 auf.
 Um widerspruchslose Aussagen zu treffen könne, werden die problematischen Daten bei der Auswertung ausgeschlossen.
 
-> Wie viele Fahrräder sind zu ihrem Besitzer zurückgekommen, und wie viele wurden davor nie gestohlen?
+> Wie viele Fahrräder sind zu ihrem Besitzer zurückgekommen, und wie viele davon wurden davor nie gestohlen?
 
 ```{r, fig.width=10}
+stolen_never_stolen <- function(data, stated_condition, frequency) {
+  data %>%
+    mutate(frequency = map_chr(frequency, \(x) if_else(x == 'Never', 'No', 'Yes'))) %>%
+    filter(stated_condition) %>%
+    group_by(frequency) %>%
+    summarize(submission_count = n())
+}
+
 retrieved_bikes <- data %>%
-  filter(bike_retrived == 'Yes') %>%
-  mutate(bike_stolen_frequency = if_else(bike_stolen_frequency == 'Never', 'No', 'Yes')) %>%
-  group_by(bike_stolen_frequency) %>%
-  summarize(submission_count = n())
+  stolen_never_stolen(
+    stated_condition = data$bike_retrived == 'Yes',
+    frequency = data$bike_stolen_frequency
+  )
 
 retrieved_bikes %>%
   donut_diagram(
     values = retrieved_bikes$submission_count,
-    fill = retrieved_bikes$bike_stolen_frequency,
+    fill = retrieved_bikes$frequency,
     annotation = retrieved_bikes %>% summarize(submission_count = sum(submission_count))
   ) +
   labs(
     title = 'Anzahl der zurückerhaltenen Fahrräder',
     fill = 'Fahrrad gestohlen'
+  )
+```
+
+> In wie vielen Fällen wurden Komponenten als gestohlen angegeben, ohne gestohlen worden zu sein?
+
+```{r, fig.width = 10}
+stolen_components <- data %>%
+  stolen_never_stolen(
+    stated_condition = !is.na(data$components_stolen),
+    frequency = data$components_stolen_frequency
+  )
+
+stolen_components %>%
+  donut_diagram(
+    values = stolen_components$submission_count,
+    fill = stolen_components$frequency,
+    annotation = stolen_components %>% summarize(submission_count = sum(submission_count))
+  ) +
+  labs(
+    title = 'Anzahl der Teilnahmen mit als geklaut angegebene Komponenten',
+    fill = 'Komponente gestohlen',
+    caption = 'Anzahl der Teilnahmen welche als mindestens eine Komponente als gestohlen angeben.'
   )
 ```
