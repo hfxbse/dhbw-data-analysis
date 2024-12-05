@@ -204,21 +204,51 @@ Eine mehrfache Teilnahme lässt sich nicht eindeutig identifizieren.
 
 > Wie viele Antworten auf die Umfrage wurden abgegeben?
 
-```{r}
-data_count <- nrow(data)
-data_count
-```
+```{r, fig.width=10}
+library(ggplot2)
 
-> Wie viele unterschiedliche Antworten auf die Umfragen wurden abgegeben?
+donut_diagram <- function(data, values, fill, annotation) {
+  donut_diameter <- 2.5
 
-```{r}
+  ggplot(data, aes(x = donut_diameter, y = values, fill = fill)) +
+    geom_col() +
+    geom_text(aes(label = values), position = position_stack(vjust = 0.5), color = 'white') +
+    coord_polar(theta = "y") +
+    xlim(c(0.2, donut_diameter + 0.5)) +
+    theme(
+      panel.background = element_rect(fill = 'white', color = 'white'),
+      axis.title = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank()
+    ) +
+    annotate(
+      'text',
+      label = annotation,
+      fontface = 'bold',
+      color = 'black',
+      size = 16,
+      x = 0.3,
+      y = 0
+    )
+}
+
+total_count <- nrow(data)
 unique_count <- data %>% unique() %>% nrow()
 
-unique_count
-unique_count / data_count
+submission_counts <- data.frame(
+  count = c(unique_count, total_count - unique_count),
+  group = c("Yes", "No")
+)
+
+submission_counts %>%
+  donut_diagram(values = submission_counts$count, fill = submission_counts$group, annotation = total_count) +
+  labs(
+    title = 'Anzahl der Teilnahmen',
+    fill = 'Einzigartig'
+  )
 ```
 
-Die Doppelnennungen können auch zufällig entstehen, da ein Teilnehmer die gleiche Erfahrung gemacht haben kann wie ein
+Die Doppelnennungen können zufällig entstehen, da ein Teilnehmer die gleiche Erfahrung gemacht haben kann wie ein
 anderer.
 Der Anteil dieser Antworten liegt bei unter 2 %, weshalb hier keine genauere Betrachtung benötigt wird und im
 restlichen Notebook der volle Datensatz verwendet wird.
@@ -240,7 +270,6 @@ gegebenenfalls aus weiteren Länder getätigt worden sind.
 
 ```{r, fig.width=10,fig.height=5}
 library(treemapify)
-library(ggplot2)
 
 submissions_per_region <- data %>%
   group_by(location_country, location_city) %>%
@@ -333,27 +362,11 @@ retrieved_bikes <- data %>%
   group_by(bike_stolen_frequency) %>%
   summarize(submission_count = n())
 
-donut_diameter <- 2.5
-
-ggplot(retrieved_bikes, aes(x = donut_diameter, y = submission_count, fill = bike_stolen_frequency)) +
-  geom_col() +
-  geom_text(aes(label = submission_count), position = position_stack(vjust = 0.5), color = 'white') +
-  coord_polar(theta = "y") +
-  xlim(c(0.2, donut_diameter + 0.5)) +
-  theme(
-    panel.background = element_rect(fill = 'white', color = 'white'),
-    axis.title = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank()
-  ) +
-  annotate(
-    'text',
-    label = retrieved_bikes %>% summarize(submission_count = sum(submission_count)),
-    fontface = 'bold',
-    color = 'black',
-    size = 16,
-    x = 0.3,
-    y = 0
+retrieved_bikes %>%
+  donut_diagram(
+    values = retrieved_bikes$submission_count,
+    fill = retrieved_bikes$bike_stolen_frequency,
+    annotation = retrieved_bikes %>% summarize(submission_count = sum(submission_count))
   ) +
   labs(
     title = 'Anzahl der zurückerhaltenen Fahrräder',
