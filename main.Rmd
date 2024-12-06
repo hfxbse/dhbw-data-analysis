@@ -361,7 +361,7 @@ Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Inte
 
 Da wie genannt das Formular der Umfrage keine hinreichende Validierung durchführt, treten Widersprüche in den Daten
 auf.
-Um widerspruchslose Aussagen zu treffen können, werden die problematischen Daten bei der Auswertung ausgeschlossen.
+Um widerspruchslose Aussagen treffen zu können, werden die problematischen Daten bei der Auswertung ausgeschlossen.
 
 > Wie viele Fahrräder sind zu ihrem Besitzer zurückgekommen, und wie viele davon wurden davor nie gestohlen?
 
@@ -388,6 +388,27 @@ retrieved_bikes %>%
   ) +
   labs(
     title = 'Anzahl der zurückerhaltenen Fahrräder',
+    fill = 'Fahrrad gestohlen'
+  )
+```
+
+> Wie viele Fahrräder sind zu ihrem Besitzer nie zurückgekommen, und wie viele davon wurden davor nie gestohlen?
+
+```{r, fig.width = 10}
+never_retrieved_bikes <- data %>%
+  stolen_never_stolen(
+    stated_condition = data$bike_retrived == 'No',
+    frequency = data$bike_stolen_frequency
+  )
+
+never_retrieved_bikes %>%
+  donut_diagram(
+    values = never_retrieved_bikes$submission_count,
+    fill = never_retrieved_bikes$frequency,
+    annotation = never_retrieved_bikes %>% summarize(submission_count = sum(submission_count))
+  ) +
+  labs(
+    title = 'Anzahl der nie zurückerhaltenen Fahrräder',
     fill = 'Fahrrad gestohlen'
   )
 ```
