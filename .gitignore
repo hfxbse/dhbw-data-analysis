@@ -18,6 +18,7 @@
 
 # R Markdown
 main.html
+main_files/
 
 # Nix
 result

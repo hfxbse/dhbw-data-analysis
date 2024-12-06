@@ -270,6 +270,37 @@ gegebenenfalls aus weiteren Länder getätigt worden sind.
 
 > Aus welchen Regionen kommen die Teilnahmen?
 
+```{r, fig.width=10,fig.height=6.25}
+library(maps)
+
+world_map <- map_data('world')
+
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group)) +
+  theme(
+    panel.background = element_rect(fill = 'white', color = 'black'),
+    axis.line = element_line(color = 'black'),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  ) +
+  geom_point(
+    data = data,
+    aes(x = as.numeric(location_longitude), y = as.numeric(location_latitude)),
+    color = 'Deep Pink',
+    fill = 'Pink',
+    pch = 21,
+    size = 2,
+    alpha = I(0.5)
+  ) +
+  labs(
+    title = 'Orte der Teilnahmen',
+    caption = 'Ein Marker entspricht eine Teilnahme.',
+  )
+```
+
+> Welche Regionen sind am meisten vertreten?
+
 ```{r, fig.width=10,fig.height=5}
 library(treemapify)
 
@@ -301,7 +332,7 @@ country_city_distrubition <- function(region_counts, country) {
 }
 
 top_regions_per_top_country <- bind_rows(
-  top_countries$location_country %>% map(\(x) country_city_distrubition(submissions_per_region, x)),
+  top_countries$location_country %>% map_df(\(x) country_city_distrubition(submissions_per_region, x)),
   data %>%
     filter(!(location_country %in% top_countries$location_country)) %>%
     summarize(region_count = n(), location_city = 'Other', location_country = 'Other')
@@ -320,36 +351,7 @@ ggplot(
   )
 ```
 
-```{r, fig.width=10,fig.height=6.25}
-library(maps)
-
-world_map <- map_data('world')
-
-ggplot() +
-  geom_polygon(data = world_map, aes(x = long, y = lat, group = group)) +
-  theme(
-    panel.background = element_rect(fill = 'white', color = 'black'),
-    axis.line = element_line(color = 'black'),
-    axis.title = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank()
-  ) +
-  geom_point(
-    data = data,
-    aes(x = as.numeric(location_longitude), y = as.numeric(location_latitude)),
-    color = 'Deep Pink',
-    fill = 'Pink',
-    pch = 21,
-    size = 2,
-    alpha = I(0.5)
-  ) +
-  labs(
-    title = 'Orte der Teilnahmen',
-    caption = 'Ein Marker entspricht eine Teilnahme.',
-  )
-```
-
-# 6. Quantitatives Ausmaß der Diebstähle
+# 6. Ausmaß der Diebstähle
 
 ```{r, fig.width = 10, fig.height = 8}
 data %>%
