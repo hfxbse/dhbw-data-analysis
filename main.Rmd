@@ -255,18 +255,22 @@ restlichen Notebook der volle Datensatz verwendet wird.
 
 # 5. Geographische Auswertung der Teilnahmen
 
-> Aus wie vielen Länder kommen die Teilnahmen?
+> Aus wie vielen Ländern kommen die Teilnahmen?
 
-```{r}
-data %>%
+```{r, fig.width = 10, fig.height = 1}
+country_count <- data %>%
   select(location_country) %>%
   unique() %>%
   filter(!is.na(location_country)) %>%
   nrow()
+
+ggplot() +
+  annotate('text', x = 0, y = 0, size = 16, label = paste('≥', country_count)) +
+  theme_void()
 ```
 
 Das Ergebnis ist als Mindestanzahl zu verstehen, da Teilnahmen nicht immer einem Land zugeordnet werden können und
-gegebenenfalls aus weiteren Länder getätigt worden sind.
+gegebenenfalls aus weiteren Ländern getätigt worden sind.
 
 > Aus welchen Regionen kommen die Teilnahmen?
 
