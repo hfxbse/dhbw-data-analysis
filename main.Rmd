@@ -188,7 +188,7 @@ data <- data %>%
     handlebars_stolen = check_multi_selection('Handlebars', components_stolen),
     headset_stolen = check_multi_selection('Headset', components_stolen),
     forks_stolen = check_multi_selection('Forks', components_stolen),
-    breaks_stolen = check_multi_selection('Breaks', components_stolen),
+    brakes_stolen = check_multi_selection('Brakes', components_stolen),
     gears_stolen = check_multi_selection('Gears', components_stolen),
     lights_stolen = check_multi_selection('Lights', components_stolen),
     other_components_stolen = check_multi_selection('Others', components_stolen),
@@ -374,17 +374,17 @@ stolen_never_stolen <- function(data, stated_condition, frequency) {
     summarize(submission_count = n())
 }
 
-retrieved_bikes <- data %>%
+retrieved_bike_counts <- data %>%
   stolen_never_stolen(
     stated_condition = data$bike_retrived == 'Yes',
     frequency = data$bike_stolen_frequency
   )
 
-retrieved_bikes %>%
+retrieved_bike_counts %>%
   donut_diagram(
-    values = retrieved_bikes$submission_count,
-    fill = retrieved_bikes$frequency,
-    annotation = retrieved_bikes %>% summarize(submission_count = sum(submission_count))
+    values = retrieved_bike_counts$submission_count,
+    fill = retrieved_bike_counts$frequency,
+    annotation = retrieved_bike_counts %>% summarize(submission_count = sum(submission_count))
   ) +
   labs(
     title = 'Anzahl der zurückerhaltenen Fahrräder',
@@ -416,17 +416,17 @@ never_retrieved_bikes %>%
 > In wie vielen Fällen wurden Komponenten als gestohlen angegeben, ohne gestohlen worden zu sein?
 
 ```{r, fig.width = 10}
-stolen_components <- data %>%
+stolen_component_counts <- data %>%
   stolen_never_stolen(
     stated_condition = !is.na(data$components_stolen),
     frequency = data$components_stolen_frequency
   )
 
-stolen_components %>%
+stolen_component_counts %>%
   donut_diagram(
-    values = stolen_components$submission_count,
-    fill = stolen_components$frequency,
-    annotation = stolen_components %>% summarize(submission_count = sum(submission_count))
+    values = stolen_component_counts$submission_count,
+    fill = stolen_component_counts$frequency,
+    annotation = stolen_component_counts %>% summarize(submission_count = sum(submission_count))
   ) +
   labs(
     title = 'Anzahl der Teilnahmen mit als geklaut angegebene Komponenten',
@@ -437,31 +437,83 @@ stolen_components %>%
 
 # 7. Ausmaß der Diebstähle
 
+> Wie häufig treten Diebstähle auf?
+
 ```{r, fig.width = 10, fig.height = 8}
+heat_map_design <- function(plot) {
+  plot +
+    geom_tile(color = 'white', lwd = 1.5, linetype = 1) +
+    geom_text(aes(label = submission_count), color = 'white', size = 4) +
+    coord_fixed() +
+    scale_fill_gradient(low = "grey", high = "Deep Pink") +
+    theme(
+      panel.background = element_rect(fill = 'white', color = 'white'),
+      axis.line = element_line(color = 'white'),
+      axis.ticks = element_blank(),
+      axis.title.y = element_text(margin = margin(r = 10)),
+      axis.title.x = element_text(margin = margin(t = 10)),
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+      legend.position = 'none'
+    )
+}
+
 data %>%
   group_by(bike_stolen_frequency, components_stolen_frequency) %>%
   summarize(
     submission_count = n(),
     bike_frequency_order = if_else(bike_stolen_frequency == 'Never', '0', bike_stolen_frequency),
-    components_frequency_order = if_else(components_stolen_frequency == 'Never', '0', components_stolen_frequency)
+    components_frequency_order = if_else(
+      components_stolen_frequency == 'Never',
+      '0',
+      components_stolen_frequency
+    )
   ) %>%
-  ggplot(aes(x = bike_frequency_order, y = components_frequency_order, fill = submission_count)) +
-  geom_tile(color = 'white', lwd = 1.5, linetype = 1) +
-  geom_text(aes(label = submission_count), color = 'white', size = 4) +
-  coord_fixed() +
-  scale_fill_gradient(low = "grey", high = "Deep Pink") +
-  theme(
-    panel.background = element_rect(fill = 'white', color = 'white'),
-    axis.line = element_line(color = 'white'),
-    axis.ticks = element_blank(),
-    axis.title.y = element_text(margin = margin(r = 10)),
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    legend.position = 'none'
-  ) +
+  ggplot(aes(x = bike_frequency_order, y = components_frequency_order, fill = submission_count)) %>%
+  heat_map_design() +
   labs(
     title = 'Anzahl der Teilnahmen pro Anzahl der erlebte Diebstähle',
     y = 'Anzahl der erlebten Komponentendiebstähle',
     x = 'Anzahl der erlebten Fahrraddiebstähle'
+  )
+```
+
+> Welche Komponenten werden am meisten gestohlen?
+
+```{r, fig.width = 10}
+stolen_components <- data %>%
+  filter(components_stolen_frequency != 'Never')
+
+count_stolen <- function(data, name, column) {
+  column <- deparse(substitute(column))
+
+  data %>%
+    filter(data[[column]] == "Yes") %>%
+    summarize(submission_count = n(), component = name) %>%
+    summarize(component, theft_frequency = submission_count / nrow(data))
+}
+
+bind_rows(
+  stolen_components %>% count_stolen('Wheels', wheels_stolen),
+  stolen_components %>% count_stolen('Seats', seats_stolen),
+  stolen_components %>% count_stolen('Handlebars', handlebars_stolen),
+  stolen_components %>% count_stolen('Headsets', headset_stolen),
+  stolen_components %>% count_stolen('Forks', forks_stolen),
+  stolen_components %>% count_stolen('Brakes', brakes_stolen),
+  stolen_components %>% count_stolen('Gears', gears_stolen),
+  stolen_components %>% count_stolen('Lights', lights_stolen),
+  stolen_components %>% count_stolen('Other', other_components_stolen),
+) %>%
+  ggplot(aes(x = component, y = theft_frequency, fill = '')) +
+  geom_bar(stat = 'identity') +
+  geom_text(aes(label = scales::percent(theft_frequency)), vjust = -1, colour = "black") +
+  theme(
+    legend.position = 'none',
+    axis.ticks = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+  ) +
+  ylim(c(0, 0.5)) +
+  labs(
+    title = "Häufigkeit der Diebstähle je Komponente unter den Komponentendiebstählen",
   )
 ```
