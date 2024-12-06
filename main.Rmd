@@ -367,54 +367,55 @@ Da wie genannt das Formular der Umfrage keine hinreichende Validierung durchfüh
 auf.
 Um widerspruchslose Aussagen treffen zu können, werden die problematischen Daten bei der Auswertung ausgeschlossen.
 
-> Wie viele Fahrräder sind zu ihrem Besitzer zurückgekommen, und wie viele davon wurden davor nie gestohlen?
+> Zu welchem Anteil sind Fahrräder als gestohlen angenommen worden, ohne gestohlen zu sein?
 
-```{r, fig.width=10}
+```{r, fig.width=10, fig.height = 3}
 stolen_never_stolen <- function(data, stated_condition, frequency) {
+  frequency <- deparse(substitute(frequency))
+
   data %>%
-    mutate(frequency = map_chr(frequency, \(x) if_else(x == 'Never', 'No', 'Yes'))) %>%
+    mutate(frequency = map_chr(data[[frequency]], \(x) if_else(x == 'Never', 'No', 'Yes'))) %>%
     filter(stated_condition) %>%
     group_by(frequency) %>%
     summarize(submission_count = n())
 }
 
-retrieved_bike_counts <- data %>%
-  stolen_never_stolen(
-    stated_condition = data$bike_retrived == 'Yes',
-    frequency = data$bike_stolen_frequency
-  )
+bike_stolen_never_stolen <- function(data, stated_condition, case) {
+  data %>%
+    stolen_never_stolen(
+      stated_condition = stated_condition,
+      frequency = bike_stolen_frequency
+    ) %>%
+    summarize(frequency, submission_count, case = case)
+}
 
-retrieved_bike_counts %>%
-  donut_diagram(
-    values = retrieved_bike_counts$submission_count,
-    fill = retrieved_bike_counts$frequency,
-    annotation = retrieved_bike_counts %>% summarize(submission_count = sum(submission_count))
+bike_theft_counts <- bind_rows(
+  data %>% bike_stolen_never_stolen(data$bike_retrived == 'Yes', 'Bike retrieved'),
+  data %>% bike_stolen_never_stolen(data$bike_retrived == 'No', 'Bike not retrieved'),
+  data %>% bike_stolen_never_stolen(data$police_report == 'Yes', 'Bike theft reported to police')
+)
+
+total_bike_theft_counts <- bike_theft_counts %>%
+  group_by(case) %>%
+  summarize(submission_count = sum(submission_count))
+
+bike_theft_counts %>% ggplot(aes(x = case, y = submission_count, fill = frequency)) +
+  geom_bar(stat = 'identity') +
+  geom_text(aes(label = submission_count), position = position_stack(vjust = 0.5), color = 'white') +
+  geom_text(data = total_bike_theft_counts, aes(label = submission_count, fill = NULL), hjust = -0.5, color = 'black') +
+  ylim(c(0, 3750)) +
+  theme(
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.text.x = element_blank(),
+    panel.background = element_rect(fill = 'white', color = 'white')
   ) +
+  coord_flip() +
   labs(
-    title = 'Anzahl der zurückerhaltenen Fahrräder',
-    fill = 'Fahrrad gestohlen'
-  )
-```
-
-> Wie viele Fahrräder sind zu ihrem Besitzer nie zurückgekommen, und wie viele davon wurden davor nie gestohlen?
-
-```{r, fig.width = 10}
-never_retrieved_bikes <- data %>%
-  stolen_never_stolen(
-    stated_condition = data$bike_retrived == 'No',
-    frequency = data$bike_stolen_frequency
+    title = 'Anzahl der als gestohlen angegebenen Fahrräder je Sachverhalten',
+    fill = 'Fahrrad gestohlen',
   )
 
-never_retrieved_bikes %>%
-  donut_diagram(
-    values = never_retrieved_bikes$submission_count,
-    fill = never_retrieved_bikes$frequency,
-    annotation = never_retrieved_bikes %>% summarize(submission_count = sum(submission_count))
-  ) +
-  labs(
-    title = 'Anzahl der nie zurückerhaltenen Fahrräder',
-    fill = 'Fahrrad gestohlen'
-  )
 ```
 
 > In wie vielen Fällen wurden Komponenten als gestohlen angegeben, ohne gestohlen worden zu sein?
@@ -423,7 +424,7 @@ never_retrieved_bikes %>%
 stolen_component_counts <- data %>%
   stolen_never_stolen(
     stated_condition = !is.na(data$components_stolen),
-    frequency = data$components_stolen_frequency
+    frequency = components_stolen_frequency
   )
 
 stolen_component_counts %>%
