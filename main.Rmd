@@ -253,6 +253,8 @@ anderer.
 Der Anteil dieser Antworten liegt bei unter 2 %, weshalb hier keine genauere Betrachtung benötigt wird und im
 restlichen Notebook der volle Datensatz verwendet wird.
 
+# 5. Geographische Auswertung der Teilnahmen
+
 > Aus wie vielen Länder kommen die Teilnahmen?
 
 ```{r}
@@ -347,7 +349,44 @@ ggplot() +
   )
 ```
 
-# 5. Unstimmigkeiten in den Daten
+# 6. Quantitatives Ausmaß der Diebstähle
+
+```{r, fig.width = 10, fig.height = 8}
+data %>%
+  group_by(bike_stolen_frequency, components_stolen_frequency) %>%
+  summarize(
+    submission_count = n(),
+    bike_frequency_order = if_else(bike_stolen_frequency == 'Never', '0', bike_stolen_frequency),
+    components_frequency_order = if_else(components_stolen_frequency == 'Never', '0', components_stolen_frequency)
+  ) %>%
+  ggplot(aes(x = bike_frequency_order, y = components_frequency_order, fill = submission_count)) +
+  geom_tile(color = 'white', lwd = 1.5, linetype = 1) +
+  geom_text(aes(label = submission_count), color = 'white', size = 4) +
+  coord_fixed() +
+  scale_fill_gradient(low = "grey", high = "Deep Pink") +
+  theme(
+    panel.background = element_rect(fill = 'white', color = 'white'),
+    axis.line = element_line(color = 'white'),
+    axis.ticks = element_blank(),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    legend.position = 'none'
+  ) +
+  labs(
+    title = 'Anzahl der Teilnahmen pro Anzahl der erlebte Diebstähle',
+    y = 'Anzahl der erlebten Komponentendiebstähle',
+    x = 'Anzahl der erlebten Fahrraddiebstähle'
+  )
+```
+
+Da gerade einmal etwa ein Fünftel der Teilnahmen keine Diebstähle angeben, lässt sich ein Selection-Bias vermuten.
+Bei einer öffentlichen Onlineumfrage handelt es sich nicht immer um eine randomisierte Stichprobe.
+Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Interesse aufweisen und dadurch
+überproportional vertreten sind.
+
+
+# 7. Unstimmigkeiten in den Daten
 
 Da wie genannt das Formular der Umfrage keine hinreichende Validierung durchführt, treten Widersprüche in den Daten
 auf.
