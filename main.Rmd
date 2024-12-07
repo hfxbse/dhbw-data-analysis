@@ -448,7 +448,6 @@ stolen_component_counts %>%
 heat_map_design <- function(plot) {
   plot +
     geom_tile(color = 'white', lwd = 1.5, linetype = 1) +
-    geom_text(aes(label = submission_count), color = 'white', size = 4) +
     coord_fixed() +
     scale_fill_gradient(low = "grey", high = "Deep Pink") +
     theme(
@@ -475,6 +474,7 @@ data %>%
   ) %>%
   ggplot(aes(x = bike_frequency_order, y = components_frequency_order, fill = submission_count)) %>%
   heat_map_design() +
+  geom_text(aes(label = submission_count), color = 'white', size = 4) +
   labs(
     title = 'Anzahl der Teilnahmen pro Anzahl der erlebte Diebstähle',
     y = 'Anzahl der erlebten Komponentendiebstähle',
@@ -510,7 +510,7 @@ bind_rows(
 ) %>%
   ggplot(aes(x = component, y = theft_frequency, fill = '')) +
   geom_bar(stat = 'identity') +
-  geom_text(aes(label = scales::percent(theft_frequency)), vjust = -1, colour = "black") +
+  geom_text(aes(label = scales::percent(theft_frequency)), vjust = -1, color = 'black') +
   theme(
     legend.position = 'none',
     axis.ticks = element_blank(),
@@ -519,6 +519,51 @@ bind_rows(
   ) +
   ylim(c(0, 0.5)) +
   labs(
-    title = "Häufigkeit der Diebstähle je Komponente unter den Komponentendiebstählen",
+    title = 'Häufigkeit der Diebstähle je Komponente unter den Komponentendiebstählen',
+  )
+```
+
+# 8. Effektivität der Maßnahmen zur Fahrraddiebstahlaufklärung
+
+> Was ist die Aufklärungsquote in Abhängigkeit vom Wissen über die Rahmennummer?
+
+```{r, fig.width = 11}
+library(knitr)
+
+stolen_bikes <- data %>%
+  filter(bike_stolen_frequency != 'Never')
+
+case_solved_rate_plot <- function(data, condition_column) {
+  condition_column <- deparse(substitute(condition_column))
+
+  data %>%
+    filter(!is.na(bike_retrived), !is.na(data[[condition_column]])) %>%
+    group_by(bike_retrived, .data[[condition_column]]) %>%
+    summarize(likelyhood = n() / nrow(stolen_bikes)) %>%
+    ggplot(aes(x = bike_retrived, y = .data[[condition_column]], fill = likelyhood)) %>%
+    heat_map_design() +
+    geom_text(aes(label = scales::percent(likelyhood)), color = 'white', size = 4)
+}
+
+stolen_bikes %>%
+  case_solved_rate_plot(frame_number_record) +
+  labs(
+    title = 'Aufklärungsquote der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
+    x = 'Fahrrad zurückerhalten',
+    y = 'Rahmennummer bekannt',
+    caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
+  )
+```
+
+> Was ist die Aufklärungsquote in Abhängigkeit vom Involvement der polizeilichen Behörden?
+
+```{r, fig.width = 11}
+stolen_bikes %>%
+  case_solved_rate_plot(police_report) +
+  labs(
+    title = 'Aufklärungsquote der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
+    x = 'Fahrrad zurückerhalten',
+    y = 'Polizeilich gemeldet',
+    caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
   )
 ```
