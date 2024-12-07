@@ -451,6 +451,8 @@ heat_map_design <- function(plot) {
     coord_fixed() +
     scale_fill_gradient(low = "grey", high = "Deep Pink") +
     theme(
+      plot.title = element_text(hjust = 0.5),
+      plot.caption = element_text(hjust = 0.5),
       panel.background = element_rect(fill = 'white', color = 'white'),
       axis.line = element_line(color = 'white'),
       axis.ticks = element_blank(),
@@ -525,7 +527,9 @@ bind_rows(
 
 # 8. Effektivität der Maßnahmen zur Fahrraddiebstahlaufklärung
 
-> Was ist die Aufklärungsquote in Abhängigkeit vom Wissen über die Rahmennummer?
+Eine Aussage zur Effektivität lässt sich durch das Vergleichen der bedingten Wahrscheinlichkeit treffen.
+
+> Wie effektiv ist die Rahmennummer zur Fahrraddiebstahlaufklärung?
 
 ```{r, fig.width = 11}
 library(knitr)
@@ -533,37 +537,58 @@ library(knitr)
 stolen_bikes <- data %>%
   filter(bike_stolen_frequency != 'Never')
 
-case_solved_rate_plot <- function(data, condition_column) {
-  condition_column <- deparse(substitute(condition_column))
+two_conditions_plot <- function(data, condition_column_x, condition_column_y) {
+  condition_column_x <- deparse(substitute(condition_column_x))
+  condition_column_y <- deparse(substitute(condition_column_y))
 
   data %>%
-    filter(!is.na(bike_retrived), !is.na(data[[condition_column]])) %>%
-    group_by(bike_retrived, .data[[condition_column]]) %>%
-    summarize(likelyhood = n() / nrow(stolen_bikes)) %>%
-    ggplot(aes(x = bike_retrived, y = .data[[condition_column]], fill = likelyhood)) %>%
+    filter(!is.na(data[condition_column_x]), !is.na(data[[condition_column_y]])) %>%
+    group_by(.data[[condition_column_x]], .data[[condition_column_y]]) %>%
+    summarize(likelyhood = n() / nrow(data)) %>%
+    ggplot(aes(x = .data[[condition_column_x]], y = .data[[condition_column_y]], fill = likelyhood)) %>%
     heat_map_design() +
     geom_text(aes(label = scales::percent(likelyhood)), color = 'white', size = 4)
 }
 
 stolen_bikes %>%
-  case_solved_rate_plot(frame_number_record) +
+  two_conditions_plot(bike_retrived, frame_number_record) +
   labs(
-    title = 'Aufklärungsquote der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
+    title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
     x = 'Fahrrad zurückerhalten',
     y = 'Rahmennummer bekannt',
     caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
   )
 ```
+Die Wahrscheinlichkeit zum Wiedererhalt des Fahrrads ist mit dem Wissen über die Rahmennummer um 60 % höher als wenn
+diese nicht bekannt ist.
 
-> Was ist die Aufklärungsquote in Abhängigkeit vom Involvement der polizeilichen Behörden?
+> Wie effektiv ist die polizeiliche Meldung eines Fahrraddiebstahls zur Aufklärung?
 
 ```{r, fig.width = 11}
 stolen_bikes %>%
-  case_solved_rate_plot(police_report) +
+  two_conditions_plot(bike_retrived, police_report) +
   labs(
-    title = 'Aufklärungsquote der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
+    title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
     x = 'Fahrrad zurückerhalten',
     y = 'Polizeilich gemeldet',
     caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
   )
 ```
+Eine polizeiliche Meldung eines Diebstahls erhöht die Chance zum Wiedererhalten des Fahrrades lediglich um 9 %.
+
+
+> Wie häufig wurde ein Diebstahl gemeldet in Abhängigkeit vom Wissen der Rahmennummer?
+
+```{r, fig.width = 11}
+stolen_bikes %>%
+  two_conditions_plot(police_report, frame_number_record) +
+  labs(
+    title = 'Polizeiliche Fahrraddiebstahlmeldequotenverteilung in Abhängikeit zur Rahmennummer',
+    x = 'Polizeilich gemeldet',
+    y = 'Rahmennummer bekannt',
+    caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
+  )
+```
+
+Ist die Rahmennummer bekannt, wird ein Diebstahl mit nahezu doppelter Wahrscheinlichkeit polizeilich gemeldet, als wenn
+die Rahmennummer nicht bekannt ist.
