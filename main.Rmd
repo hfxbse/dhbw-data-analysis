@@ -355,11 +355,6 @@ ggplot(
   )
 ```
 
-Da gerade einmal etwa ein Fünftel der Teilnahmen keine Diebstähle angeben, lässt sich ein Selection-Bias vermuten.
-Bei einer öffentlichen Onlineumfrage handelt es sich nicht immer um eine randomisierte Stichprobe.
-Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Interesse aufweisen und dadurch
-überproportional vertreten sind.
-
 
 # 6. Unstimmigkeiten in den Daten
 
@@ -417,6 +412,11 @@ bike_theft_counts %>% ggplot(aes(x = case, y = submission_count, fill = frequenc
   )
 
 ```
+Da gerade einmal etwa ein Fünftel der Teilnahmen keine Diebstähle angeben, lässt sich ein Selection-Bias vermuten.
+Bei einer öffentlichen Onlineumfrage handelt es sich nicht immer um eine randomisierte Stichprobe.
+Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Interesse aufweisen und dadurch
+überproportional vertreten sind.
+
 
 > In wie vielen Fällen wurden Komponenten als gestohlen angegeben, ohne gestohlen worden zu sein?
 
