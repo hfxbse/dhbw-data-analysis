@@ -140,7 +140,7 @@ data <- read_excel(data_source, sheet = sheet_name) %>%
     bike_cost = 'What was the approximate value of the bike?',
     frame_number_record = 'Did you have a record of the frame number of the bike?',
     police_report = 'Did you report the stolen bike to the police?',
-    bike_retrived = 'Did you get the stolen bike back?',
+    bike_retrieved = 'Did you get the stolen bike back?',
     components_stolen_frequency = 'How many times have components (wheels, seats, brakes etc) been stolen from your bike?',
     components_stolen = 'Which components have been stolen?',
     other_components_stolen_description = 'Please specify the other components...',
@@ -257,7 +257,7 @@ restlichen Notebook der volle Datensatz verwendet wird.
 
 > Aus wie vielen Ländern kommen die Teilnahmen?
 
-```{r, fig.width = 10, fig.height = 1}
+```{r, fig.width = 10, fig.height = 2}
 country_count <- data %>%
   select(location_country) %>%
   unique() %>%
@@ -385,8 +385,8 @@ bike_stolen_never_stolen <- function(data, stated_condition, case) {
 }
 
 bike_theft_counts <- bind_rows(
-  data %>% bike_stolen_never_stolen(data$bike_retrived == 'Yes', 'Bike retrieved'),
-  data %>% bike_stolen_never_stolen(data$bike_retrived == 'No', 'Bike not retrieved'),
+  data %>% bike_stolen_never_stolen(data$bike_retrieved == 'Yes', 'Bike retrieved'),
+  data %>% bike_stolen_never_stolen(data$bike_retrieved == 'No', 'Bike not retrieved'),
   data %>% bike_stolen_never_stolen(data$police_report == 'Yes', 'Bike theft reported to police')
 )
 
@@ -412,10 +412,6 @@ bike_theft_counts %>% ggplot(aes(x = case, y = submission_count, fill = frequenc
   )
 
 ```
-Da gerade einmal etwa ein Fünftel der Teilnahmen keine Diebstähle angeben, lässt sich ein Selection-Bias vermuten.
-Bei einer öffentlichen Onlineumfrage handelt es sich nicht immer um eine randomisierte Stichprobe.
-Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Interesse aufweisen und dadurch
-überproportional vertreten sind.
 
 
 > In wie vielen Fällen wurden Komponenten als gestohlen angegeben, ohne gestohlen worden zu sein?
@@ -483,6 +479,11 @@ data %>%
     x = 'Anzahl der erlebten Fahrraddiebstähle'
   )
 ```
+Da gerade weniger als ein Fünftel der Teilnahmen keine Diebstähle angeben, lässt sich darüber hinaus ein Selection-Bias
+vermuten.
+Bei einer öffentlichen Onlineumfrage handelt es sich nicht immer um eine randomisierte Stichprobe.
+Es ist denkbar, dass Teilnehmer, die Diebstahl erlebt haben, ein größeres Interesse aufweisen und dadurch
+überproportional vertreten sind.
 
 > Welche Komponenten werden am meisten gestohlen?
 
@@ -527,31 +528,39 @@ bind_rows(
 
 # 8. Effektivität der Maßnahmen zur Fahrraddiebstahlaufklärung
 
-Eine Aussage zur Effektivität lässt sich durch das Vergleichen der bedingten Wahrscheinlichkeit treffen.
+Eine Aussage zur Effektivität einer Maßnahme lässt sich durch das Vergleichen der bedingten Wahrscheinlichkeit treffen.
 
-> Wie effektiv ist die Rahmennummer zur Fahrraddiebstahlaufklärung?
+> Werden Fälle mit bekannter Rahmennummer öfters Äufgeklärt?
 
 ```{r, fig.width = 11}
-library(knitr)
-
 stolen_bikes <- data %>%
   filter(bike_stolen_frequency != 'Never')
 
-two_conditions_plot <- function(data, condition_column_x, condition_column_y) {
-  condition_column_x <- deparse(substitute(condition_column_x))
-  condition_column_y <- deparse(substitute(condition_column_y))
+two_conditions <- function(data, condition_x, condition_y) {
+  condition_x <- deparse(substitute(condition_x))
+  condition_y <- deparse(substitute(condition_y))
 
   data %>%
-    filter(!is.na(data[condition_column_x]), !is.na(data[[condition_column_y]])) %>%
-    group_by(.data[[condition_column_x]], .data[[condition_column_y]]) %>%
-    summarize(likelyhood = n() / nrow(data)) %>%
-    ggplot(aes(x = .data[[condition_column_x]], y = .data[[condition_column_y]], fill = likelyhood)) %>%
+    filter(!is.na(data[condition_x]), !is.na(data[[condition_y]])) %>%
+    group_by(.data[[condition_x]], .data[[condition_y]]) %>%
+    summarize(submission_count = n())
+}
+
+two_conditions_plot <- function(data, condition_x, condition_y) {
+  condition_x <- deparse(substitute(condition_x))
+  condition_y <- deparse(substitute(condition_y))
+
+  data %>%
+    mutate(likelyhood = submission_count / nrow(data)) %>%
+    ggplot(aes(x = .data[[condition_x]], y = .data[[condition_y]], fill = likelyhood)) %>%
     heat_map_design() +
     geom_text(aes(label = scales::percent(likelyhood)), color = 'white', size = 4)
 }
 
-stolen_bikes %>%
-  two_conditions_plot(bike_retrived, frame_number_record) +
+retrieve_to_frame_number <- stolen_bikes %>% two_conditions(bike_retrieved, frame_number_record)
+
+retrieve_to_frame_number %>%
+  two_conditions_plot(bike_retrieved, frame_number_record) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
     x = 'Fahrrad zurückerhalten',
@@ -559,14 +568,42 @@ stolen_bikes %>%
     caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
   )
 ```
-Die Wahrscheinlichkeit zum Wiedererhalt des Fahrrads ist mit dem Wissen über die Rahmennummer um 60 % höher als wenn
-diese nicht bekannt ist.
+```{r, fig.width = 10, fig.height = 2}
+improvement_plot <- function(data, fixed_condition, changing_condition) {
+  fixed_condition <- deparse(substitute(fixed_condition))
+  changing_condition <- deparse(substitute(changing_condition))
 
-> Wie effektiv ist die polizeiliche Meldung eines Fahrraddiebstahls zur Aufklärung?
+  totals <- data %>%
+    group_by(.data[[changing_condition]]) %>%
+    summarize(total = sum(submission_count))
+
+  likelyhoods <- merge(data, totals, by = changing_condition) %>%
+    filter(.data[[fixed_condition]] == "Yes") %>%
+    mutate(likelyhood = submission_count / total)
+
+  likelyhood <- function(data, condition) {
+    (data %>% filter(.data[[changing_condition]] == condition))$likelyhood[[1]]
+  }
+
+  improvement <- ((likelyhoods %>% likelyhood("Yes")) / (likelyhoods %>% likelyhood("No"))) - 1
+
+  ggplot() +
+    annotate('text', x = 0, y = 0, size = 14, label = paste(scales::percent(improvement), 'more likely')) +
+    theme_void()
+}
+
+retrieve_to_frame_number %>%
+  improvement_plot(bike_retrieved, frame_number_record)
+```
+
+> Werden Fälle mit polizeilicher Meldung öfters Äufgeklärt?
 
 ```{r, fig.width = 11}
-stolen_bikes %>%
-  two_conditions_plot(bike_retrived, police_report) +
+retrieve_to_report <- stolen_bikes %>%
+  two_conditions(bike_retrieved, police_report)
+
+retrieve_to_report %>%
+  two_conditions_plot(bike_retrieved, police_report) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
     x = 'Fahrrad zurückerhalten',
@@ -574,13 +611,18 @@ stolen_bikes %>%
     caption = 'Die Randhäufigkeiten entsprechen der Summe einer einzeler Zeile beziehungsweiße Spalte.'
   )
 ```
-Eine polizeiliche Meldung eines Diebstahls erhöht die Chance zum Wiedererhalten des Fahrrades lediglich um 9 %.
+```{r, fig.width = 10, fig.height = 2}
+retrieve_to_report %>% improvement_plot(bike_retrieved, police_report)
+```
 
 
-> Wie häufig wurde ein Diebstahl gemeldet in Abhängigkeit vom Wissen der Rahmennummer?
+> Werden Fälle mit Rahmennummer öfters polizeilich gemeldet?
 
 ```{r, fig.width = 11}
-stolen_bikes %>%
+report_to_frame_number <- stolen_bikes %>%
+  two_conditions(police_report, frame_number_record)
+
+report_to_frame_number %>%
   two_conditions_plot(police_report, frame_number_record) +
   labs(
     title = 'Polizeiliche Fahrraddiebstahlmeldequotenverteilung in Abhängikeit zur Rahmennummer',
@@ -590,5 +632,6 @@ stolen_bikes %>%
   )
 ```
 
-Ist die Rahmennummer bekannt, wird ein Diebstahl mit nahezu doppelter Wahrscheinlichkeit polizeilich gemeldet, als wenn
-die Rahmennummer nicht bekannt ist.
+```{r, fig.width = 10, fig.height = 2}
+report_to_frame_number %>% improvement_plot(police_report, frame_number_record)
+```
