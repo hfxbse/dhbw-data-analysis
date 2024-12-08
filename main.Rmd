@@ -574,6 +574,8 @@ bind_rows(
     title = 'Häufigkeit der Diebstähle je Komponente unter den Komponentendiebstählen',
   )
 ```
+Es fällt auf, das Komponenten, die ohne Werkzeuge entfernt werden können, auch deutlich häufiger gestohlen werden als
+die, die Werkzeug benötigen.
 
 # 8. Effektivität der Maßnahmen zur Fahrraddiebstahlaufklärung
 
