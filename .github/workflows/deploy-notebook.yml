@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - Data_With_Geolocations_stud.xlsx
+      - flake.lock
+      - flake.nix
+      - main.Rmd
 
 jobs:
   render-markdown:
