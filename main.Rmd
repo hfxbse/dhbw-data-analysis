@@ -602,18 +602,36 @@ two_conditions <- function(data, condition_x, condition_y) {
     summarize(submission_count = n())
 }
 
-contingency_table <- function(data, condition_x, condition_y) {
+yes_no_label <- function(value, yes, no) {
+  case_when(
+    value == "Yes" ~ yes,
+    value == "No" ~ no,
+    .default = value
+  )
+}
+
+contingency_table <- function(data, condition_x, condition_y, x_lables, y_lables) {
   condition_x <- deparse(substitute(condition_x))
   condition_y <- deparse(substitute(condition_y))
 
+  sum_label <- 'Summe'
   sum_color <- '#f3f3f3'
 
-  data %>%
+  frame <- data %>%
+    mutate(
+      '{condition_x}' := x_lables(.data[[condition_x]]),
+      '{condition_y}' := y_lables(.data[[condition_y]]),
+    ) %>%
     pivot_wider(names_from = condition_x, values_from = submission_count) %>%
     column_to_rownames(var = condition_y) %>%
     as.matrix() %>%
     addmargins() %>%
-    as.data.frame() %>%
+    as.data.frame()
+
+  colnames(frame)[3] <- sum_label
+  row.names(frame)[3] <- sum_label
+
+  frame %>%
     kable(format = 'html') %>%
     kable_styling() %>%
     row_spec(0, extra_css = 'border-bottom: 1px solid;') %>%
@@ -640,7 +658,12 @@ two_conditions_plot <- function(data, condition_x, condition_y) {
 retrieve_to_frame_number <- stolen_bikes %>% two_conditions(bike_retrieved, frame_number_record)
 
 retrieve_to_frame_number %>%
-  contingency_table(bike_retrieved, frame_number_record) %>%
+  contingency_table(
+    bike_retrieved,
+    frame_number_record,
+    \(x) yes_no_label(x, "Fahrrad zurückerhalten", "Fahrrad nicht zurückerhalten"),
+    \(y) yes_no_label(y, "Rahmennummer bekannt", "Rahmennummer nicht bekannt")
+  ) %>%
   two_conditions_plot(bike_retrieved, frame_number_record) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
@@ -684,7 +707,12 @@ retrieve_to_report <- stolen_bikes %>%
   two_conditions(bike_retrieved, police_report)
 
 retrieve_to_report %>%
-  contingency_table(bike_retrieved, police_report) %>%
+  contingency_table(
+    bike_retrieved,
+    police_report,
+    \(x) yes_no_label(x, "Fahrrad zurückerhalten", "Fahrrad nicht zurückerhalten"),
+    \(x) yes_no_label(x, "Polizeilich gemeldet", "Polizeilich nicht gemeldet")
+  ) %>%
   two_conditions_plot(bike_retrieved, police_report) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
@@ -705,7 +733,12 @@ report_to_frame_number <- stolen_bikes %>%
   two_conditions(police_report, frame_number_record)
 
 report_to_frame_number %>%
-  contingency_table(police_report, frame_number_record) %>%
+  contingency_table(
+    police_report,
+    frame_number_record,
+    \(x) yes_no_label(x, "Polizeilich gemeldet", "Polizeilich nicht gemeldet"),
+    \(y) yes_no_label(y, "Rahmennummer bekannt", "Rahmennummer nicht bekannt")
+  ) %>%
   two_conditions_plot(police_report, frame_number_record) +
   labs(
     title = 'Polizeiliche Fahrraddiebstahlmeldequotenverteilung in Abhängikeit zur Rahmennummer',
