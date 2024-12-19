@@ -19,6 +19,8 @@
 # R Markdown
 main.html
 main_files/
+.Rproj.user
+.Rhistory
 
 # Nix
 result
