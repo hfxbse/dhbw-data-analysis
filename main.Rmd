@@ -583,7 +583,12 @@ Eine Aussage zur Effektivität einer Maßnahme lässt sich durch das Vergleichen
 
 > Werden Fälle mit bekannter Rahmennummer öfters Äufgeklärt?
 
-```{r, fig.width = 11}
+```{r, fig.width = 11, results='asis'}
+library(kableExtra)
+library(knitr)
+library(tibble)
+library(tidyr)
+
 stolen_bikes <- data %>%
   filter(bike_stolen_frequency != 'Never')
 
@@ -595,6 +600,30 @@ two_conditions <- function(data, condition_x, condition_y) {
     filter(!is.na(data[condition_x]), !is.na(data[[condition_y]])) %>%
     group_by(.data[[condition_x]], .data[[condition_y]]) %>%
     summarize(submission_count = n())
+}
+
+contingency_table <- function(data, condition_x, condition_y) {
+  condition_x <- deparse(substitute(condition_x))
+  condition_y <- deparse(substitute(condition_y))
+
+  sum_color <- '#f3f3f3'
+
+  data %>%
+    pivot_wider(names_from = condition_x, values_from = submission_count) %>%
+    column_to_rownames(var = condition_y) %>%
+    as.matrix() %>%
+    addmargins() %>%
+    as.data.frame() %>%
+    kable(format = 'html') %>%
+    kable_styling() %>%
+    row_spec(0, extra_css = 'border-bottom: 1px solid;') %>%
+    row_spec(2, extra_css = 'border-bottom: 1px solid;') %>%
+    column_spec(1, bold = TRUE, border_right = TRUE, include_thead = TRUE) %>%
+    column_spec(4, background = sum_color, include_thead = TRUE, border_left = TRUE) %>%
+    row_spec(3, background = sum_color) %>%
+    print()
+
+  data
 }
 
 two_conditions_plot <- function(data, condition_x, condition_y) {
@@ -611,6 +640,7 @@ two_conditions_plot <- function(data, condition_x, condition_y) {
 retrieve_to_frame_number <- stolen_bikes %>% two_conditions(bike_retrieved, frame_number_record)
 
 retrieve_to_frame_number %>%
+  contingency_table(bike_retrieved, frame_number_record) %>%
   two_conditions_plot(bike_retrieved, frame_number_record) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur Rahmennummer',
@@ -649,11 +679,12 @@ retrieve_to_frame_number %>%
 
 > Werden Fälle mit polizeilicher Meldung öfters Äufgeklärt?
 
-```{r, fig.width = 11}
+```{r, fig.width = 11, results='asis'}
 retrieve_to_report <- stolen_bikes %>%
   two_conditions(bike_retrieved, police_report)
 
 retrieve_to_report %>%
+  contingency_table(bike_retrieved, police_report) %>%
   two_conditions_plot(bike_retrieved, police_report) +
   labs(
     title = 'Aufklärungsquotenverteilung der Fahrraddiebstähle in Abhängikeit zur polizeilicher Behörde',
@@ -669,11 +700,12 @@ retrieve_to_report %>% improvement_plot(bike_retrieved, police_report)
 
 > Werden Fälle mit Rahmennummer öfters polizeilich gemeldet?
 
-```{r, fig.width = 11}
+```{r, fig.width = 11, results='asis'}
 report_to_frame_number <- stolen_bikes %>%
   two_conditions(police_report, frame_number_record)
 
 report_to_frame_number %>%
+  contingency_table(police_report, frame_number_record) %>%
   two_conditions_plot(police_report, frame_number_record) +
   labs(
     title = 'Polizeiliche Fahrraddiebstahlmeldequotenverteilung in Abhängikeit zur Rahmennummer',

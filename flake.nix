@@ -15,6 +15,7 @@
       packages = with pkgs.rPackages; [
         dplyr
         ggplot2
+        kableExtra
         knitr
         maps
         purrr
@@ -22,6 +23,7 @@
         rmarkdown
         rstudioapi
         stringr
+        tidyr
         treemapify
       ];
     };
