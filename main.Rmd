@@ -1,13 +1,6 @@
-<!-- @formatter:off -->
-
 ---
 title: "Explorative Datenanalyse von Fahrraddiebstähle"
-output:
-  html_notebook:
-    df_print: paged
 ---
-
-<!-- @formatter:on -->
 
 
 # 1. Herkunft der Daten
@@ -128,6 +121,8 @@ Die Daten liegen in einer Excel-Datei vor, welche als Spaltennamen die jeweilige
 Für eine bessere Handhabung werden die Spaltennamen durch Umbenennen vereinfacht.
 
 ```{r}
+library(rmarkdown)
+
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 library(readxl)
@@ -159,7 +154,7 @@ data <- read_excel(data_source, sheet = sheet_name) %>%
     location_city = 'City'
   )
 
-str(data)
+paged_table(data)
 ```
 
 # 3. Aufbereitung
@@ -201,7 +196,7 @@ data <- data %>%
     other_components_stolen = check_multi_selection('Others', components_stolen),
   )
 
-str(data)
+paged_table(data)
 ```
 
 # 4. Quantitative Betrachtung der Teilnahmen
