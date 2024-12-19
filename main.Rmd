@@ -121,7 +121,7 @@ Die Daten liegen in einer Excel-Datei vor, welche als Spaltennamen die jeweilige
 Für eine bessere Handhabung werden die Spaltennamen durch Umbenennen vereinfacht.
 
 ```{r}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 library(readxl)
 library(dplyr)
