@@ -24,13 +24,13 @@ jobs:
       - uses: actions/checkout@v4
         name: 'Checkout Repository'
 
-      - run: echo "rmarkdown::render('main.Rmd')" | nix develop --command R --slave
+      - run: echo "rmarkdown::render('main.Rmd', 'html_notebook')" | nix develop --command R --slave
         name: 'Render markdown'
 
       - run: mkdir _site/
         name: 'Create output directory'
 
-      - run: mv main.html _site/index.html
+      - run: mv main.nb.html _site/index.html
         name: 'Move output to output directory'
 
       - uses: actions/upload-pages-artifact@v3

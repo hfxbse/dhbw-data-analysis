@@ -11,7 +11,7 @@ All required dependencies are managed as [Nix flake](https://wiki.nixos.org/wiki
 To compile the R notebook to an HTML site, run
 
 ```sh
-echo "rmarkdown::render('main.Rmd')" | nix develop --command R --slave
+echo "rmarkdown::render('main.Rmd', 'html_notebook')" | nix develop --command R --slave
 ```
 
 This will get you the same result as the online version.

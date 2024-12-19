@@ -17,7 +17,7 @@
 .nfs*
 
 # R Markdown
-main.html
+*.html
 main_files/
 .Rproj.user
 .Rhistory

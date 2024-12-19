@@ -1,6 +1,13 @@
+<!-- @formatter:off -->
+
 ---
 title: "Explorative Datenanalyse von Fahrraddiebstähle"
+output:
+  html_notebook:
+    df_print: paged
 ---
+
+<!-- @formatter:on -->
 
 
 # 1. Herkunft der Daten
@@ -16,7 +23,7 @@ Freitext zu spezifizieren.
 Eine Verifizierung der Eingabe bietet das Formular nicht.
 So ist es beispielsweise möglich anzugeben, das Fahrrad wäre gleichzeitig abgesichert und nicht abgesichert gewesen.
 
-[](@formatter:off)
+<!-- @formatter:off -->
 
 ------------------------------------------------------------------------------------------------------------------------
 Frage                                               Antwort-Möglichkeiten                  Mehrfachauswahl Verpflichtend
@@ -104,7 +111,7 @@ secured with?                                       Quick release clamp plus
                                                     lock
 ------------------------------------------------------------------------------------------------------------------------
 
-[](@formatter:on)
+<!-- @formatter:on -->
 
 Als Belohnung wurde den ersten 5000 Teilnehmern eine Gewinnchance auf ein Fahrrad im Wert von bis zu 600 $ in
 Aussicht gestellt.
